@@ -291,7 +291,7 @@ void deleteBus(int busNumber) {
     }
 
     if (found) {
-        // Delete logic (similar to your original code)
+        // Delete logic 
         printf("Bus deleted successfully!\n");
     } else {
         printf("Bus not found!\n");
