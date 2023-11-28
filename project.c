@@ -29,6 +29,13 @@ struct Bus {
     struct Reservation seats[MAX_SEATS];
 };
 
+// Customer structure to store booking information
+struct Customer {
+    char passenger_name[20];
+    int seat_number;
+    int bus_number;
+};
+
 // Database of users
 struct User database[] = {
     {"manager", "@manager20"},
@@ -38,6 +45,8 @@ struct User database[] = {
 
 int totalBuses = 0;
 struct Bus buses[10];
+struct Customer bookings[MAX_SEATS];
+int totalBookings = 0;
 
 // Function prototypes
 int searchUser(const struct User* database, int size, const char* enteredId, const char* enteredPassword);
@@ -46,13 +55,14 @@ void initializeBus(struct Bus* bus);
 void displayBus(const struct Bus* bus);
 void reserveSeat(struct Bus* bus);
 void busInformationManagement();
-
 void addBus();
 void deleteBus(int busNumber);
 void modifyBus(int busNumber);
 void viewBuses();
 void saveDataToFile();
 void readDataFromFile();
+void displayAvailableSeats(const struct Bus* bus);
+void bookSeat(struct Bus* bus);
 
 int main() {
     readDataFromFile();
@@ -81,7 +91,8 @@ int main() {
                 break;
             case 2:
                 printf("You chose Booking Management.\n");
-                // ... (unchanged part of the code)
+                displayAvailableSeats(&buses[0]); // Display available seats
+                bookSeat(&buses[0]); // Book a seat
                 break;
             default:
                 printf("Invalid choice.\n");
@@ -154,6 +165,46 @@ void reserveSeat(struct Bus* bus) {
         scanf("%s", bus->seats[seat - 1].passenger_name);
         bus->seats[seat - 1].is_reserved = 1;
         printf("Seat %d reserved for %s.\n", seat, bus->seats[seat - 1].passenger_name);
+    }
+}
+
+// Function to display available seats on a bus
+void displayAvailableSeats(const struct Bus* bus) {
+    printf("Available Seats on Bus %d:\n", bus->busNumber);
+    printf("Seat Number\n");
+    int i;
+    for (i = 0; i < MAX_SEATS; i++) {
+        if (!bus->seats[i].is_reserved) {
+            printf("%d\n", bus->seats[i].seat_number);
+        }
+    }
+}
+
+// Function to book a seat on a bus
+void bookSeat(struct Bus* bus) {
+    int seat;
+    printf("Enter the seat number you want to book: ");
+    scanf("%d", &seat);
+
+    if (seat < 1 || seat > MAX_SEATS) {
+        printf("Invalid seat number. Please choose a seat between 1 and %d.\n", MAX_SEATS);
+        return;
+    }
+
+    if (bus->seats[seat - 1].is_reserved) {
+        printf("Seat %d is already reserved.\n", seat);
+    } else {
+        printf("Enter passenger name: ");
+        scanf("%s", bus->seats[seat - 1].passenger_name);
+        bus->seats[seat - 1].is_reserved = 1;
+
+        // Save booking information
+        strcpy(bookings[totalBookings].passenger_name, bus->seats[seat - 1].passenger_name);
+        bookings[totalBookings].seat_number = seat;
+        bookings[totalBookings].bus_number = bus->busNumber;
+        totalBookings++;
+
+        printf("Seat %d booked for %s.\n", seat, bus->seats[seat - 1].passenger_name);
     }
 }
 
@@ -297,6 +348,20 @@ void saveDataToFile() {
     }
 
     fclose(file);
+
+    // Save bookings to a customer.txt file
+    FILE* bookingFile = fopen("customer.txt", "w");
+    if (bookingFile == NULL) {
+        perror("Error opening file for writing");
+        exit(EXIT_FAILURE);
+    }
+
+    fprintf(bookingFile, "%d\n", totalBookings);
+    for (i = 0; i < totalBookings; ++i) {
+        fprintf(bookingFile, "%s %d %d\n", bookings[i].passenger_name, bookings[i].seat_number, bookings[i].bus_number);
+    }
+
+    fclose(bookingFile);
 }
 
 // Function to read data from a file
@@ -316,4 +381,20 @@ void readDataFromFile() {
     }
 
     fclose(file);
+
+    // Read bookings from a customer.txt file
+    FILE* bookingFile = fopen("customer.txt", "r");
+    if (bookingFile == NULL) {
+        perror("Error opening file for reading");
+        return;
+    }
+
+    fscanf(bookingFile, "%d", &totalBookings);
+    for (i = 0; i < totalBookings; ++i) {
+        fscanf(bookingFile, "%s %d %d", bookings[i].passenger_name, &bookings[i].seat_number, &bookings[i].bus_number);
+        // Mark the corresponding seat as reserved
+        buses[bookings[i].bus_number - 1].seats[bookings[i].seat_number - 1].is_reserved = 1;
+    }
+
+    fclose(bookingFile);
 }
