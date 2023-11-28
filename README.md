@@ -1,4 +1,5 @@
 Bus Reservation and Information Management System
+
 This C program implements a simple Bus Reservation and Information Management System. The system allows users to log in, choose between two main functionalities: Bus Information Management and Booking Management, and perform various operations within each category.
 
 User Authentication
